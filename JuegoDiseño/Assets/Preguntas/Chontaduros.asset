@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b2ae38bfc91b384fbe027884047ec31, type: 3}
+  m_Name: Chontaduros
+  m_EditorClassIdentifier: 
+  Nombre: Chontaduro
+  Descripcion: "Si Pepito tenia 2 chontaduros y le regalo 1 a Ana \xBFCuantos chontaduros
+    tiene Pepito ahora?"
+  Respuestas: {fileID: 11400000, guid: 0cb44b1be95bcda49ab2873101e35cc4, type: 2}
+  sprite: {fileID: 21300000, guid: d6ce2c7fb53acdf48b6acfe9a70b3ac7, type: 3}
+  fondo: {fileID: 21300000, guid: c4eced6cf8e21aa4b9bd05c6db14bd7d, type: 3}

@@ -4,145 +4,137 @@ using UnityEngine;
 using TMPro;
 using System.IO;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public class SistemaDePreguntas : MonoBehaviour
 {
+    [Header("UI")]
+    public EventSystem system;
+    public TextMeshProUGUI txPregunta;
+    public TextMeshProUGUI txTiempo;
+    public Image fondo;
+    public float Timer;
+    [Space(10)]
 
-    private int eleccion,preguntaRandom;
-    private bool seleccionado;
-    private float Timer;
+    [Header("Destinos y sprites")]
+    public GameObject[] ListaDestinos;
+    public GameObject[] ListaOrigen;
+    public Image[] ListaSprite;
+    [Space(10)]
 
-    private GameObject Destino1, Destino2, Destino3;
-    private GameObject opcion1, opcion2, opcion3;
-    private GameObject[] ListaDestinos;
+    [Header("Preguntas")]
+    public Preguntas[] preguntas;
+    [Space(5)]
 
-    private TextMeshProUGUI txPregunta,txTiempo;
-
-    private Vector2 posicionInicial;
-
-    private SpriteRenderer[] ListaSprites;
-
-    private CodigoEstudiante Estudiante;
-
-    private Preguntas objPreguntas;
-    private ListaPreguntas preguntas;
-    public ListaResultados resultados;
-    private Resultados resultado;
+    private Preguntas AuxPregunta;
+    private int randomInt;
+    public faseJuego fase;
+    public List<Preguntas> ListaPreguntas;
+    //public CodigoEstudiante Estudiante;
 
     // Use this for initialization
     void Start()
     {
-        objPreguntas = new Preguntas();
-        resultado = new Resultados();
-        Estudiante = GameObject.Find("CodigoEstudiante").transform.GetComponent<CodigoEstudiante>();
-        preguntas = objPreguntas.leerJsonPreguntas();
-        txPregunta = GameObject.Find("Pregunta").transform.GetChild(0).GetComponent<TextMeshProUGUI>();
-        txTiempo = GameObject.Find("Tiempo").transform.GetComponent<TextMeshProUGUI>();
-        Destino1 = GameObject.Find("DestinoMax1");
-        Destino2 = GameObject.Find("DestinoMax2");
-        Destino3 = GameObject.Find("DestinoMax3");
-        opcion1 = GameObject.Find("SpriteOpcion1");
-        opcion2 = GameObject.Find("SpriteOpcion2");
-        opcion3 = GameObject.Find("SpriteOpcion3");
-        posicionInicial = opcion1.transform.position;
-
-        ListaSprites = new SpriteRenderer[] { opcion1.transform.GetComponent<SpriteRenderer>(), opcion2.transform.GetComponent<SpriteRenderer>(), opcion3.transform.GetComponent<SpriteRenderer>() };
-        ListaDestinos = new GameObject[] { Destino1, Destino2, Destino3 };
-
-        SetterInicio();
+        ListaPreguntas = new List<Preguntas>(preguntas.Length);
+        foreach (Preguntas pregunta in preguntas){
+            ListaPreguntas.Add(pregunta);
+        }
+        randomInt = Random.Range(0, ListaPreguntas.Count);
+        AuxPregunta = ListaPreguntas[randomInt];
+        ListaPreguntas.Remove(ListaPreguntas[randomInt]);
+        fondo.sprite = AuxPregunta.fondo;
+        txPregunta.text = AuxPregunta.Descripcion;
+        for (int i = 0; i < 4; i++)
+        {
+            ListaSprite[i].sprite = AuxPregunta.sprite;
+            ListaSprite[i].GetComponentInChildren<Text>().text = AuxPregunta.Respuestas.Solucion[i].ToString();
+        }
+        fase = faseJuego.Objetivo;
     }
 
     // Update is called once per frame
-    void Update()
-    {
-        switch (eleccion)
+    void Update(){
+        if (fase == faseJuego.NuevaPregunta)
         {
-            case 1:
-                IrAlObjetivo();
-                break;
-            case 2:
-                BajarOpcionesReiniciar();
-                break;
-            case 3:
-                SetterInicio();
-                break;
+            NuevoPregunta();
         }
-        if (opcion1.transform.position.Equals(Destino1.transform.position)){
+        if (fase == faseJuego.Objetivo)
+        {
+            IrAlObjetivo();
+        }
+        if (fase == faseJuego.CambiarPregunta)
+        {
+            IrAlOrigen();
+        }
+        if (fase == faseJuego.Espera)
+        {
             Timer += Time.deltaTime;
-            txTiempo.text = ((int)Timer).ToString();
         }
+        txTiempo.text = ((int)Timer).ToString();
     }
 
-    private void SetterInicio()
-    {
-        txTiempo.text = "0";
-        seleccionado = false;
-        eleccion = 1;
-        preguntaRandom = Random.Range(0,preguntas.preguntas.Count);
-        txPregunta.text = preguntas.preguntas[preguntaRandom].Descripcion;
-        foreach (SpriteRenderer ListaSprites in ListaSprites)
-        {
-            ListaSprites.transform.rotation = Quaternion.Euler(new Vector3(0, 0, Random.Range(0, 360)));
+    private void NuevoPregunta(){
+        if (ListaPreguntas.Count == 0){
+            AcabarJuego();
+            return;
         }
-        for (int i = 0; i < preguntas.preguntas[preguntaRandom].Respuestas.Length; i++)
+        Timer = 0f;
+        randomInt = Random.Range(0, ListaPreguntas.Count);
+        AuxPregunta = ListaPreguntas[randomInt];
+        ListaPreguntas.Remove(ListaPreguntas[randomInt]);
+        fondo.sprite = AuxPregunta.fondo;
+        txPregunta.text = AuxPregunta.Descripcion;
+        for (int i = 0; i < 4; i++)
         {
-            ListaSprites[i].GetComponentInChildren<TextMeshProUGUI>().text = preguntas.preguntas[preguntaRandom].Respuestas[i].Solucion.ToString();
+            ListaSprite[i].sprite = AuxPregunta.sprite;
+            ListaSprite[i].GetComponentInChildren<Text>().text = AuxPregunta.Respuestas.Solucion[i].ToString();
         }
+        system.SetSelectedGameObject(null);
+        fase = faseJuego.Objetivo;
+    }
+
+    private void AcabarJuego(){
+        fase = faseJuego.Acabo;
+        Debug.Log("Se acabo esta vuelta");
     }
 
     private void IrAlObjetivo()
     {
-        for (int i = 0; i < ListaSprites.Length; i++)
+        for (int i = 0; i < 4; i++)
         {
-            ListaSprites[i].transform.position = Vector2.MoveTowards(ListaSprites[i].transform.position, ListaDestinos[i].transform.position, 200f * Time.deltaTime);
-        }
-        if (opcion1.transform.position.Equals(Destino1.transform.position) && seleccionado)
-        {
-            eleccion = 2;
-            seleccionado = false;
-        }
-    }
-
-    public void VerificarPregunta(int posicion)
-    {
-        bool EsCorrecto;
-        if (preguntas.preguntas[preguntaRandom].Respuestas[posicion].EsCorrecto){
-            seleccionado = true;
-            EsCorrecto = true;
-            Debug.Log("Buena");
-        }
-        else{
-            seleccionado = true;
-            EsCorrecto = false;
-            Debug.Log("Mala");
-        }
-        GuardarDatos(Estudiante.codigo, preguntaRandom, EsCorrecto,Timer);
-    }
-
-    public void BajarOpcionesReiniciar(){
-        for (int i = 0; i < ListaSprites.Length; i++)
-        {
-            ListaSprites[i].transform.GetComponent<Rigidbody2D>().gravityScale = 20f;
-            Timer = 0;
-        }
-        if (opcion1.transform.position.y <= posicionInicial.y)
-        {
-            for (int i = 0; i < ListaSprites.Length; i++)
+            ListaSprite[i].transform.position = Vector2.MoveTowards(ListaSprite[i].transform.position, ListaDestinos[i].transform.position, 100f * Time.deltaTime);
+            if (ListaSprite[i].transform.position.y >= ListaDestinos[i].transform.position.y)
             {
-                ListaSprites[i].transform.GetComponent<Rigidbody2D>().gravityScale = 0f;
-                ListaSprites[i].transform.position = Vector2.MoveTowards(ListaSprites[i].transform.position, ListaDestinos[i].transform.position, 200f * Time.deltaTime);
-                if (opcion1.transform.position.y > posicionInicial.y)
-                {
-                    eleccion = 3;
-                }
+                fase = faseJuego.Espera;
             }
         }
     }
 
-    public void GuardarDatos(string estudiante,int pregunta,bool correcta,float tiempo){
-        resultados.resultados[pregunta].pregunta = pregunta;
-        resultados.resultados[pregunta].Tiempo = tiempo;
-        resultados.resultados[pregunta].EsCorrecto = correcta;
-        resultado.guardarJsonEditado("/StreamingAssets/Estudiantes/" + estudiante + ".json", resultados);
+    private void IrAlOrigen()
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            ListaSprite[i].transform.position = Vector2.MoveTowards(ListaSprite[i].transform.position, ListaOrigen[i].transform.position, 150f * Time.deltaTime);
+            if (ListaSprite[i].transform.position.y <= ListaOrigen[i].transform.position.y)
+            {
+                fase = faseJuego.NuevaPregunta;
+            }
+        }
+    }
+
+    public void VerificarPregunta(int posicion) {
+        if (AuxPregunta.Respuestas.EsCorrecto[posicion])
+        {
+            Debug.Log("Buena");
+        }
+        else
+        {
+            Debug.Log("Mala");
+        }
+        fase = faseJuego.CambiarPregunta;
+    }
+
+    public enum faseJuego{
+        Objetivo,Espera, NuevaPregunta, CambiarPregunta, Acabo
     }
 }

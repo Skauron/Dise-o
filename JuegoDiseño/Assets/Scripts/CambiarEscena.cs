@@ -6,13 +6,11 @@ using TMPro;
 
 public class CambiarEscena : MonoBehaviour {
 
-    TMP_InputField InputField;
-    CodigoEstudiante CodigoEstudiante;
+    public TMP_InputField InputField;
+    public CodigoEstudiante CodigoEstudiante;
 
 	// Use this for initialization
 	void Start () {
-        CodigoEstudiante = GameObject.Find("CodigoEstudiante").transform.GetComponent<CodigoEstudiante>();
-        InputField = GameObject.Find("Input").transform.GetComponent<TMP_InputField>();
     }
 	
 	// Update is called once per frame

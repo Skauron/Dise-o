@@ -1,1 +1,0 @@
-{"preguntas":[{"Nombre":"Hongos","Descripcion":"¿Cuantos hongos hay?","Respuestas":[{"Solucion":2,"EsCorrecto":false},{"Solucion":3,"EsCorrecto":true},{"Solucion":80,"EsCorrecto":false}]},{"Nombre":"Manzanas","Descripcion":"¿Cuantas manzanas hay?","Respuestas":[{"Solucion":0,"EsCorrecto":true},{"Solucion":2,"EsCorrecto":false},{"Solucion":2,"EsCorrecto":false}]}]}

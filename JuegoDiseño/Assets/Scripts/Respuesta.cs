@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[System.Serializable]
-public class Respuesta{
+[CreateAssetMenu(menuName = "Respuestas/New Respuesta")]
+public class Respuesta : ScriptableObject{
 
-    public int Solucion;
-    public bool EsCorrecto;
+    public int[] Solucion;
+    public bool[] EsCorrecto;
 }
