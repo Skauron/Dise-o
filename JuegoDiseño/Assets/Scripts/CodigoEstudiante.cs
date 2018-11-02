@@ -4,5 +4,6 @@ using UnityEngine;
 
 public class CodigoEstudiante : MonoBehaviour{
 
+    public int idEstudiante;
     public string codigo;
 }

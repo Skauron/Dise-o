@@ -1,18 +1,27 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using TMPro;
 using System.IO;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using MySql.Data.MySqlClient;
 
 public class SistemaDePreguntas : MonoBehaviour
 {
+    [Header("SQL")]
+    public adminMYSQL admin;
+    public CodigoEstudiante estudiante;
+    public puntajeFinal puntaje;
+    [Space(10)]
+
     [Header("UI")]
     public EventSystem system;
     public TextMeshProUGUI txPregunta;
     public TextMeshProUGUI txTiempo;
     public Image fondo;
+    public Sprite[] ListaSpritesJuego;
     public float Timer;
     [Space(10)]
 
@@ -20,21 +29,28 @@ public class SistemaDePreguntas : MonoBehaviour
     public GameObject[] ListaDestinos;
     public GameObject[] ListaOrigen;
     public Image[] ListaSprite;
+    public Sprite[] ListaFondos;
     [Space(10)]
 
     [Header("Preguntas")]
     public Preguntas[] preguntas;
+    public Sprite[] retroalimentacion;
+    public Image ImagenRetro;
     [Space(5)]
 
     private Preguntas AuxPregunta;
     private int randomInt;
     public faseJuego fase;
     public List<Preguntas> ListaPreguntas;
-    //public CodigoEstudiante Estudiante;
+
+    //Private
+    private MySqlDataReader reader;
 
     // Use this for initialization
     void Start()
     {
+        estudiante = GameObject.Find("CodigoEstudiante").GetComponent<CodigoEstudiante>();
+        ConsultarPreguntas();
         ListaPreguntas = new List<Preguntas>(preguntas.Length);
         foreach (Preguntas pregunta in preguntas){
             ListaPreguntas.Add(pregunta);
@@ -42,13 +58,17 @@ public class SistemaDePreguntas : MonoBehaviour
         randomInt = Random.Range(0, ListaPreguntas.Count);
         AuxPregunta = ListaPreguntas[randomInt];
         ListaPreguntas.Remove(ListaPreguntas[randomInt]);
-        fondo.sprite = AuxPregunta.fondo;
-        txPregunta.text = AuxPregunta.Descripcion;
-        for (int i = 0; i < 4; i++)
+        fondo.sprite = ListaFondos[AuxPregunta.fondo - 1];
+        txPregunta.text = AuxPregunta.descripcion;
+        for (int i = 0; i < 3; i++)
         {
-            ListaSprite[i].sprite = AuxPregunta.sprite;
-            ListaSprite[i].GetComponentInChildren<Text>().text = AuxPregunta.Respuestas.Solucion[i].ToString();
+            ListaSprite[i].sprite = ListaSpritesJuego[AuxPregunta.sprite - 1];
         }
+        ListaSprite[0].GetComponentInChildren<Text>().text = AuxPregunta.pregunta_0;
+        ListaSprite[1].GetComponentInChildren<Text>().text = AuxPregunta.pregunta_1;
+        ListaSprite[2].GetComponentInChildren<Text>().text = AuxPregunta.pregunta_2;
+        //ListaSprite[3].GetComponentInChildren<Text>().text = AuxPregunta.pregunta_3;
+
         fase = faseJuego.Objetivo;
     }
 
@@ -73,6 +93,11 @@ public class SistemaDePreguntas : MonoBehaviour
         txTiempo.text = ((int)Timer).ToString();
     }
 
+    public void ConsultarPreguntas()
+    {
+        preguntas = admin.SelectPreguntas();
+    }
+
     private void NuevoPregunta(){
         if (ListaPreguntas.Count == 0){
             AcabarJuego();
@@ -82,13 +107,17 @@ public class SistemaDePreguntas : MonoBehaviour
         randomInt = Random.Range(0, ListaPreguntas.Count);
         AuxPregunta = ListaPreguntas[randomInt];
         ListaPreguntas.Remove(ListaPreguntas[randomInt]);
-        fondo.sprite = AuxPregunta.fondo;
-        txPregunta.text = AuxPregunta.Descripcion;
-        for (int i = 0; i < 4; i++)
+        fondo.sprite = ListaFondos[AuxPregunta.fondo - 1];
+        txPregunta.text = AuxPregunta.descripcion;
+        for (int i = 0; i < 3; i++)
         {
-            ListaSprite[i].sprite = AuxPregunta.sprite;
-            ListaSprite[i].GetComponentInChildren<Text>().text = AuxPregunta.Respuestas.Solucion[i].ToString();
+            ListaSprite[i].sprite = ListaSpritesJuego[AuxPregunta.sprite - 1];
         }
+        ListaSprite[0].GetComponentInChildren<Text>().text = AuxPregunta.pregunta_0;
+        ListaSprite[1].GetComponentInChildren<Text>().text = AuxPregunta.pregunta_1;
+        ListaSprite[2].GetComponentInChildren<Text>().text = AuxPregunta.pregunta_2;
+        // ListaSprite[3].GetComponentInChildren<Text>().text = AuxPregunta.pregunta_3.ToString();
+
         system.SetSelectedGameObject(null);
         fase = faseJuego.Objetivo;
     }
@@ -96,6 +125,7 @@ public class SistemaDePreguntas : MonoBehaviour
     private void AcabarJuego(){
         fase = faseJuego.Acabo;
         Debug.Log("Se acabo esta vuelta");
+        SceneManager.LoadScene("Fin");
     }
 
     private void IrAlObjetivo()
@@ -123,15 +153,29 @@ public class SistemaDePreguntas : MonoBehaviour
     }
 
     public void VerificarPregunta(int posicion) {
-        if (AuxPregunta.Respuestas.EsCorrecto[posicion])
+        StopAllCoroutines();
+        if (AuxPregunta.respuesta == posicion)
         {
+            StartCoroutine(retroalimentacionPregunta(retroalimentacion[0]));
+            admin.InsertCalifacion(AuxPregunta.subTemaId, AuxPregunta.id, estudiante.idEstudiante, 1, Mathf.RoundToInt(Timer));
+            puntaje.puntaje += 10;
             Debug.Log("Buena");
         }
         else
         {
+            StartCoroutine(retroalimentacionPregunta(retroalimentacion[1]));
+            admin.InsertCalifacion(AuxPregunta.subTemaId, AuxPregunta.id, estudiante.idEstudiante, 0, Mathf.RoundToInt(Timer));
             Debug.Log("Mala");
         }
         fase = faseJuego.CambiarPregunta;
+    }
+
+    IEnumerator retroalimentacionPregunta(Sprite imagen)
+    {
+        ImagenRetro.gameObject.SetActive(true);
+        ImagenRetro.sprite = imagen;
+        yield return new WaitForSeconds(1.5f);
+        ImagenRetro.gameObject.SetActive(false);
     }
 
     public enum faseJuego{
